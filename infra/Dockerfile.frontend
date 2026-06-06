@@ -1,0 +1,31 @@
+# Stage 1: Builder
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+# Note: Ensure next.config.js has output: 'standalone'
+RUN npm run build
+
+# Stage 2: Runtime
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Non-root user
+RUN chown -R node:node /app
+
+USER node
+
+EXPOSE 3000
+
+ENTRYPOINT ["node", "server.js"]

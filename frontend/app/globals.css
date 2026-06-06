@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-gray-200 font-mono antialiased;
+  }
+}
+
+/* React Flow custom styles for dark theme */
+.react-flow__node {
+  @apply rounded-md font-mono text-xs shadow-lg;
+}
+.react-flow__edge-path {
+  @apply stroke-border stroke-2;
+}
+.react-flow__controls {
+  @apply bg-panel border-border !important;
+}
+.react-flow__controls-button {
+  @apply bg-panel border-border text-gray-400 hover:bg-gray-800 !important;
+}
+.react-flow__minimap {
+  @apply bg-panel border border-border rounded-md !important;
+}
+.react-flow__minimap-mask {
+  @apply fill-background/50 !important;
+}
