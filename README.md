@@ -11,6 +11,7 @@
     <a href="#ai-integration">AI Integration</a> •
     <a href="#getting-started">Setup</a> •
     <a href="#demo">Demo</a> •
+    <a href="#live-testing">Live Testing</a> •
     <a href="#tech-stack">Tech Stack</a>
   </p>
 </p>
@@ -33,40 +34,9 @@ This is not a pipeline of sequential LLM calls. It is a **distributed AI archite
 
 ### System Overview
 
-```
-                         ┌─────── INGESTION ───────┐
-                         │  Azure Monitor Alert     │
-                         │  → Webhook (Common       │
-                         │    Alert Schema)          │
-                         │  Chaos App → App Insights │
-                         └────────────┬──────────────┘
-                                      │
-  ┌───────────────────────────────────▼───────────────────────────────────┐
-  │                    BACKEND (FastAPI + AutoGen)                        │
-  │                                                                      │
-  │  REST API (13 endpoints)         SWARM ORCHESTRATOR                  │
-  │  WebSocket (real-time)    ───►   Commander ─► asyncio.gather()       │
-  │  Webhook (Azure Monitor)          │  ┌── Log Forensics (KQL→LLM)    │
-  │                                   │  ├── Telemetry Intel (KQL→LLM)  │
-  │                                   │  └── Deployment Intel (→LLM)    │
-  │                                   ▼                                  │
-  │                              Consensus Engine (604-line algorithmic  │
-  │                              fusion: cluster→weight→conflict→fuse)   │
-  │                                   │                                  │
-  │                              Safety Validator → Human Approval Gate  │
-  │                                   │                                  │
-  │                              Postmortem Agent → Memory Store         │
-  └──────┬──────────┬──────────┬──────────┬──────────────────────────────┘
-         │          │          │          │
-  ┌──────▼───┐ ┌───▼─────┐ ┌─▼───────┐ ┌▼──────────┐
-  │Azure     │ │Cosmos DB│ │AI Search│ │Service Bus│
-  │OpenAI    │ │6 contain│ │Memory   │ │Topics/Sub │
-  │GPT-4o    │ │(Evidence│ │RAG      │ │Per-incident│
-  │Structured│ │Incidents│ │Recall   │ │Dynamic    │
-  │Outputs   │ │Approvals│ │Similar  │ │subscript. │
-  │          │ │Consensus│ │Incidents│ │           │
-  └──────────┘ └─────────┘ └─────────┘ └───────────┘
-```
+<p align="center">
+  <img src="docs/swarm-architecture.png" alt="Auto-SRE Swarm Architecture" />
+</p>
 
 ### The Agent Swarm (7 Agents)
 
@@ -242,11 +212,13 @@ python -m pytest tests/ -v
 
 ## 🎮 Demo: Chaos → Investigation → Resolution
 
+<a id="demo"></a>
+
 The project includes a **chaos engineering app** that creates a closed-loop demo:
 
 ```
-1. Hit chaos endpoint     →  GET /leak (allocates 100MB)
-2. Azure Monitor detects  →  Memory > 100MB alert fires
+1. Hit chaos endpoint     →  GET /spike (burns CPU for 5 seconds)
+2. Azure Monitor detects  →  CPU > threshold alert fires
 3. Webhook triggers       →  POST /api/webhook/azure-monitor
 4. Swarm investigates     →  3 agents in parallel → consensus → safety check
 5. Human approves         →  Approval dialog in dashboard
@@ -260,6 +232,112 @@ The project includes a **chaos engineering app** that creates a closed-loop demo
 | `GET /spike` | Burns CPU for 5 seconds |
 | `GET /crash` | Raises unhandled exception (500) |
 | `GET /slow` | Sleeps 3-8 seconds (latency degradation) |
+
+---
+
+## 🧪 Live Testing on Azure
+
+<a id="live-testing"></a>
+
+The Auto-SRE Swarm is deployed on Azure Container Apps with real Azure Monitor alerts. Follow these steps to trigger a real end-to-end investigation:
+
+### Live URLs
+
+| Service | URL |
+|---------|-----|
+| **Swarm Dashboard** | https://ca-swarm-frontend.greendesert-8893e24c.eastus2.azurecontainerapps.io/ |
+| **Chaos Target App** | https://ca-chaos-target.greendesert-8893e24c.eastus2.azurecontainerapps.io |
+
+### Step-by-Step: Trigger a Real Incident
+
+**1. Open the Swarm Dashboard**
+
+Navigate to the [Swarm Dashboard](https://ca-swarm-frontend.greendesert-8893e24c.eastus2.azurecontainerapps.io/) and log in (credentials: `admin` / `swarm2026`). Keep this tab open — you'll watch the investigation unfold here.
+
+**2. Hit the Chaos App to trigger an alert**
+
+Open a new browser tab and hit one of these chaos endpoints:
+
+- **CPU Spike** (recommended — triggers the HighCPU alert):
+  ```
+  https://ca-chaos-target.greendesert-8893e24c.eastus2.azurecontainerapps.io/spike
+  ```
+  > 💡 Hit this endpoint **3–5 times** over a minute to reliably exceed the CPU threshold and trigger the Azure Monitor alert.
+
+- **Memory Leak** (triggers the HighMemory alert):
+  ```
+  https://ca-chaos-target.greendesert-8893e24c.eastus2.azurecontainerapps.io/leak
+  ```
+
+- **Server Crash** (generates error telemetry in Application Insights):
+  ```
+  https://ca-chaos-target.greendesert-8893e24c.eastus2.azurecontainerapps.io/crash
+  ```
+
+- **Latency Degradation** (generates slow response telemetry):
+  ```
+  https://ca-chaos-target.greendesert-8893e24c.eastus2.azurecontainerapps.io/slow
+  ```
+
+**3. Wait for Azure Monitor to fire the alert**
+
+Azure Monitor evaluates metrics every **1 minute** with a **5-minute window**. After hitting the chaos endpoint:
+- Wait approximately **3–6 minutes** for the alert to fire
+- Azure Monitor sends a webhook (Common Alert Schema) to the Swarm backend at `/api/webhook/azure-monitor`
+- The Swarm backend automatically creates an incident and dispatches the AI agent swarm
+
+**4. Watch the investigation on the Dashboard**
+
+Go back to the [Swarm Dashboard](https://ca-swarm-frontend.greendesert-8893e24c.eastus2.azurecontainerapps.io/). You should see:
+- A **new incident** appear in the Recent Incidents list
+- Click on it to open the **Incident Workspace**
+- Watch the **Live Event Stream** as agents investigate in real-time
+- The **Evidence Graph** builds up as agents discover findings
+- The **Swarm Panel** shows each agent's status (idle → investigating → done)
+- When consensus is reached, a **human approval dialog** may appear for high-risk actions
+- After approval (or auto-approval for low-risk), a **postmortem report** is generated
+
+### What Happens Behind the Scenes
+
+```
+Chaos App (/spike)
+    │
+    ▼
+Azure Monitor detects CPU > threshold
+    │
+    ▼
+Alert fires → Action Group → Webhook POST to Swarm backend
+    │
+    ▼
+Swarm backend creates Incident in Cosmos DB
+    │
+    ▼
+Commander Agent enriches with Memory Store (similar past incidents)
+    │
+    ▼
+3 Retriever Agents run in parallel:
+├── Log Forensics    → KQL queries against Log Analytics Workspace
+├── Telemetry Intel  → KQL queries for CPU/memory/RPS metrics
+└── Deployment Intel → Checks recent deployment activity
+    │
+    ▼
+Consensus Engine → Clusters findings, detects conflicts, fuses evidence
+    │
+    ▼
+Safety Validator → Risk assessment, gates destructive actions
+    │
+    ▼
+Postmortem Agent → Generates SRE-format report, stores in Memory
+```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| No incident appears after hitting chaos endpoint | Azure Monitor alerts take 3–6 minutes to evaluate and fire. Wait and refresh. |
+| Alert fires but no incident is created | Check the backend logs: `az containerapp logs show --name ca-swarm-backend --resource-group rg-sre-swarm-foundry --follow` |
+| Dashboard shows "disconnected" | The WebSocket connection may have timed out. Refresh the page. |
+| Agents show "error" status | Check if Azure OpenAI quota is exhausted or if credentials have expired. |
 
 ---
 
