@@ -24,7 +24,7 @@ export default function Home() {
   useEffect(() => {
     // Fetch recent incidents on load
     setLoadingIncidents(true);
-    api.incidents.list(0, 6)
+    api.incidents.list(0, 5)
       .then((data) => setRecentIncidents(data))
       .catch((err) => console.error("Failed to load recent incidents:", err))
       .finally(() => setLoadingIncidents(false));

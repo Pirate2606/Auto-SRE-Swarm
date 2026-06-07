@@ -157,10 +157,12 @@ export function PostmortemModal({
                   <section>
                     <SectionHeader icon={<AlertTriangle className="w-5 h-5 text-amber-400" />} title="Contributing Factors" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {(postmortem.contributing_factors || []).map((factor, idx) => (
+                      {(postmortem.contributing_factors || []).map((factor, idx, arr) => (
                         <div
                           key={idx}
-                          className="bg-gray-900/60 border border-gray-800 rounded-lg p-4 flex gap-3 text-sm text-gray-300 items-start hover:border-gray-700 transition-colors"
+                          className={`bg-gray-900/60 border border-gray-800 rounded-lg p-4 flex gap-3 text-sm text-gray-300 items-start hover:border-gray-700 transition-colors${
+                            arr.length % 2 === 1 && idx === arr.length - 1 ? " sm:col-span-2" : ""
+                          }`}
                         >
                           <div className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                             <span className="text-[10px] font-bold text-amber-400">{idx + 1}</span>
