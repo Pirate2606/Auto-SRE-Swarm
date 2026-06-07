@@ -252,7 +252,11 @@ The Auto-SRE Swarm is deployed on Azure Container Apps with real Azure Monitor a
 
 **1. Open the Swarm Dashboard**
 
-Navigate to the [Swarm Dashboard](https://ca-swarm-frontend.greendesert-8893e24c.eastus2.azurecontainerapps.io/) and log in (credentials: `admin` / `swarm2026`). Keep this tab open — you'll watch the investigation unfold here.
+Navigate to the [Swarm Dashboard](https://ca-swarm-frontend.greendesert-8893e24c.eastus2.azurecontainerapps.io/). On first visit, your browser will prompt for Basic Auth credentials:
+- **Username:** `agent`
+- **Password:** `swarm2026`
+
+Keep this tab open — you'll watch the investigation unfold here.
 
 **2. Hit the Chaos App to trigger an alert**
 
@@ -419,12 +423,7 @@ auto-sre-swarm/
 
 ## 👨‍💻 Team
 
-| Name | Role | Responsibilities |
-|------|------|-----------------|
-| **Aditya** | Solo Developer | Full-stack development — system architecture, backend (FastAPI + AutoGen agents, Cosmos DB, Service Bus, AI Search integration), frontend (Next.js + React Flow + WebSocket), infrastructure (Docker, Azure Container Apps), chaos engineering, testing |
+| Name | Role | 
+|------|------|
+| **Aditya Naitan** | Solo Developer | 
 
----
-
-## 📄 License
-
-Built for the Microsoft Build AI Hackathon 2026 — Swarm Intelligence Track.
